@@ -184,3 +184,107 @@ Variable FRED has no value
 
 
 
+### environ变量
+
+程序可以通过`environ`变量直接访问这个字符串数组
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+extern char **environ;	// 以null结尾的字符串数组
+
+int main()
+{
+    char **env = environ;
+
+    while (*env)
+    {
+        printf("%s\n", *env);
+        env++;
+    }
+    exit(0);
+}
+```
+
+
+
+## 4.3 时间和日期
+
+时间通过一个预定义的类型`time_t`来处理，与处理时间值的函数一起定义在头文件`time.h`。
+
+可以通过`time`函数得到底层时间值，返回的是从纪元开始至今的秒数。如果`tloc`不是一个空指针，`time`函数还会把返回值写入到`tloc`指针指向的位置。
+
+```c
+#include <time.h>
+time_t time(time_t *tloc);
+```
+
+```c
+#include <time.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+// 打印时间 每两秒打印一次
+int main()
+{
+    int i;
+    time_t the_time;
+
+    for (i = 1; i <= 10; i++)
+    {
+        the_time = time((time_t *)0);
+        printf("The time is %ld\n", the_time);
+        sleep(2);
+    }
+    exit(0);
+}
+```
+
+
+
+`difftime`函数用于计算两个`time_t`值之间的秒数并以`double`类型返回它
+
+`gmtime`函数把底层时间值分解为一个结构
+
+```c
+#include <time.h>
+struct tm *gmtime(const time_t timeval);
+```
+
+| tm成员      | 说明               |
+| ----------- | ------------------ |
+| int tm_sec  | 秒，0-61           |
+| int tm_min  | 分，0-59           |
+| int tm_hour | 小时，0-23         |
+| int tm_mday | 月份中的日期，1-31 |
+| 未完待续    |                    |
+
+`tm_sec`的范围允许闰秒或双闰秒
+
+利用`tm`结构和`gmtime`函数打印出当前时间和日期。
+
+```c
+#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+int main()
+{
+    struct tm *tm_ptr;
+    time_t the_time;
+
+    (void)time(&the_time);  // 获取底层的时间值
+    tm_ptr = gmtime(&the_time); // 将该值转换为一个包含有用的时间和日期值得结构
+
+    printf("Raw time is %ld\n", the_time);
+    printf("gmtime gives:\n");
+    printf("date: %02d/%02d/%02d\n",
+           tm_ptr->tm_year, tm_ptr->tm_mon, tm_ptr->tm_mday);
+    printf("time:  %02d:%02d:%02d\n",
+           tm_ptr->tm_hour, tm_ptr->tm_min, tm_ptr->tm_sec);
+
+    exit(0);
+}
+```
+
