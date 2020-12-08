@@ -288,3 +288,61 @@ int main()
 }
 ```
 
+`localtime`函数获取当地时间
+
+```c
+#include <time.h>
+struct tm *localtime(const time_t *timeval);
+```
+
+`mktime`函数：将已分解为`tm`结构再再转换为原始的`time_t`时间值
+
+```c
+#include <time.h>
+time_t mktime(struct tm *timeptr);
+```
+
+可以使用`asctime`函数和`ctime`函数更友好的表示时间和日期
+
+```c
+#include <time.h>
+char *asctime(const struct tm *timeptr);
+char *ctime(const time_t *timeval);
+```
+
+`ctime`函数用法
+
+```c
+#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+int main()
+{
+    time_t timeval;
+    (void)time(&timeval);
+    printf("The date is: %s", ctime(&timeval));
+    exit(0);
+}
+```
+
+`strftime`函数提供对时间和日期的更多控制
+
+```c
+#include <time.h>
+size_t strftime(char *s, size_t maxsize, const char *format, struct tm *timeptr);
+```
+
+`strptime`函数用于读取日期，该函数以一个代表日期和时间的字符串为参数，并创建表示同一日期和时间的`tm`结构，`format`参数同上
+
+```c
+#include <time.h>
+char *strptime(const char *buf, const char *format, struct tm *timeptr);
+```
+
+`strftime`函数和`strptime`函数
+
+```
+
+```
+
