@@ -342,7 +342,172 @@ char *strptime(const char *buf, const char *format, struct tm *timeptr);
 
 `strftime`函数和`strptime`函数
 
+```c
+#define _XOPEN_SOURCE /* glibc2 needs this for strptime */
+#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int main()
+{
+    struct tm *tm_ptr, timestruct;
+    time_t the_time;
+    char buf[256];
+    char *result;
+
+    (void)time(&the_time);
+    tm_ptr = localtime(&the_time);
+    strftime(buf, 256, "%A %d %B, %I:%S %p", tm_ptr);
+
+    printf("strftime gives: %s\n", buf);
+
+    strcpy(buf, "Thu 26 July 2007, 17:53 will do fine");
+
+    printf("calling strptime with: %s\n", buf);
+    tm_ptr = &timestruct;
+
+    result = strptime(buf, "%a %d %b %Y, %R", tm_ptr);
+    printf("strptime consumed up to: %s\n", result);
+
+    printf("strptime gives:\n");
+    printf("date: %02d/%02d/%02d\n",
+           tm_ptr->tm_year % 100, tm_ptr->tm_mon + 1, tm_ptr->tm_mday);
+
+    printf("time: %02d:%02d\n", tm_ptr->tm_hour, tm_ptr->tm_min);
+    exit(0);
+}
 ```
 
+## 4.4 临时文件
+
+`tmpnam`函数可以生成一个唯一的文件名。会返回一个不与任何已存在文件同名的有效文件名，如果字符串`s`不为空，文件名也会写入它。
+
+```c
+#include <stdio.h>
+char *tmpnam(char *s);
 ```
+
+`tmpfile`函数可以在需要立刻使用临时文件的时候，可以用此函数在给它命名的同时打开它。另一个程序可能会创建出一个与`tmpnam`返回的文件名同名的文件。`tmpfile`函数则完全避免了这个问题的发生。
+
+```c
+#include <stdio.h>
+FILE *tmpfile(void);
+```
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+int main()
+{
+    char tmpname[L_tmpnam];
+    char *filename;
+    FILE *tmpfp;
+
+    filename = tmpnam(tmpname);
+
+    printf("Temporary file name is: %s\n", filename);
+    tmpfp = tmpfile();
+    if (tmpfp)
+        printf("Opened a temporary file OK\n");
+    else
+        perror("tmpfile");
+    
+    exit(0);
+}
+```
+
+`UNIX`还可以使用`mktemp`和`mkstemp`函数，`Linux`也支持
+
+```c
+#include <stdlib.h>
+char *mktemp(char *template);
+int mkstemp(char *template);
+```
+
+
+
+## 4.5 用户信息
+
+```c
+#include <sys/types.h>
+#include <unistd.h>
+
+uid_t getuid(void);
+char *getlogin(void);	// 返回与当前用户关联的登录名
+```
+
+还有一些获取用户 密码的函数，暂未记载
+
+
+
+## 4.6 主机信息
+
+```c
+#include <unistd.h>
+int gethostname(char *name, size_t namelen);	// 获取网络名 失败返回-1
+```
+
+```c
+#include <sys/utsname.h>
+int uname(struct utsname *name);	// 系统调用 获取主机更多详细信息
+```
+
+提取主机信息
+
+```c
+#include <sys/utsname.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+int main()
+{
+    char computer[256];
+    struct utsname uts;
+
+    if (gethostname(computer, 255) != 0 || uname(&uts) < 0)
+    {
+        fprintf(stderr, "Could not get host information\n");
+        exit(1);
+    }
+    printf("Computer host name is %s\n", computer);
+    printf("System is %s on %s hardware\n", uts.sysname, uts.machine);
+    printf("Nodename is %ss\n", uts.nodename);
+    printf("Version is %s, %s\n", uts.release, uts.version);
+    exit(0);
+}
+```
+
+## 4.7 日志
+
+对于一个典型`Linux`安装来说，文件`/var/log/messages`包含所有系统信息。`/var/log/mail`包含来自邮件系统的其他日志信息。`/var/log/debug`可能包含调试信息。
+
+`UNIX`规范通过`syslog`函数为所有程序产生日志信息提供一个接口
+
+```c
+#include <syslog.h>
+void syslog(int priority, const char *message, arguments...);
+```
+
+```c
+#include <syslog.h>
+#include <stdio.h>
+#include <stdlib.h>
+/* 在本机/var/log/syslog中会多出一行 */
+int main()
+{
+    FILE *f;
+
+    f = fopen("not_here", "r");
+    if (!f)
+        syslog(LOG_ERR | LOG_USER, "oops - %m\n");
+    exit(0);
+}
+```
+
+
+
+## 4.8 资源和限制
 
