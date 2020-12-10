@@ -71,3 +71,102 @@ int main()
 }
 ```
 
+### 滥用内存
+
+### 空指针
+
+### 释放内存
+
+```c
+#include <stdlib.h>
+void free(void *ptr_to_memory);
+```
+
+### 其他内存分配函数
+
+```c
+#include <stdlib.h>
+void *calloc(size_t number_of_elements, size_t element_size);
+void *realloc(void *existing_memory, size_t new_size);
+```
+
+
+
+## 7.2 文件锁定
+
+- 最简单的方法是以原子操作的方式创建锁文件。
+- 第二种方法是允许程序锁定文件的一部分，从而可以独享 这一部分内容的访问。
+
+`Linux`通常会在`/var/spool`目录下创建一个锁文件，注意，锁文件仅仅是充当一个指示器的角色，程序间需要通过相互协作来使用它们。用术语来说，锁文件只是**建议锁**而不是**强制锁**
+
+如果一个程序在执行时只需独占某个资源一段很短的时间（术语来讲叫做**临界区**），它就需要在进入临界区之前使用`open`系统调用创建锁文件，然后退出临界区时用`unlink`系统调用删除 该锁文件。
+
+相关头文件`fcntl.h`
+
+创建锁文件程序：
+
+```c
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <errno.h>
+
+int main()
+{
+    int file_desc;
+    int save_errno;
+
+    file_desc = open("LCK.test", O_RDWR | O_CREAT | O_EXCL, 0444);
+    if (file_desc == -1)
+    {
+        save_errno = errno;
+        printf("Open failed with error %d\n", save_errno);
+    }
+    else
+    {
+        printf("Open succeeded\n");
+    }
+    exit(EXIT_SUCCESS);
+}
+```
+
+协调性锁文件
+
+```c
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <errno.h>
+
+const char *lock_file = "LCK.test";
+
+int main()
+{
+    int file_desc;
+    int tries = 10;
+
+    while (tries--)
+    {
+        file_desc = open(lock_file, O_RDWR | O_CREAT | O_EXCL, 0444);
+        if (file_desc == -1)
+        {
+            printf("%d - Lock already present\n", getpid());
+            sleep(3);
+        }
+        else
+        {
+            printf("%d - I have exclusive access\n", getpid());
+            sleep(1);
+            (void)close(file_desc);
+            (void)unlink(lock_file);
+            sleep(2);
+        }
+    }
+    exit(EXIT_SUCCESS);
+}
+```
+
+
+
